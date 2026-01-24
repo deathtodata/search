@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  # SearXNG - the search engine
+  # Query logging is DISABLED by default
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./config/searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-}
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+
+  # Gateway - token verification, login logging, NO query logging
+  gateway:
+    build: .
+    container_name: d2d-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data:rw
+    environment:
+      - SEARXNG_URL=http://searxng:8080
+      - DATABASE_PATH=/app/data/d2d.db
+    depends_on:
+      - searxng
+
+volumes:
+  searxng-data:
+
+# NOTE: There is intentionally no logging service.
+# Queries are not logged. By design.

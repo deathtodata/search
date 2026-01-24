@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Death2Data - Private Search Infrastructure</title>
+
+<!-- Standards compliance -->
+<meta name="description" content="Private search infrastructure. We know who you are. We don't know what you search.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://death2data.com/">
+
+<!-- Security headers (set these on server too) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+
+<!-- No tracking. Period. -->
+<!-- No Google Analytics -->
+<!-- No Facebook Pixel -->
+<!-- No anything -->
+
+<style>
+/* Inspired by: example.com, iana.org, eff.org */
+/* Clean. Readable. Accessible. Fast. */
+
+:root {
+  --bg: #fff;
+  --text: #222;
+  --accent: #005a9c;
+  --muted: #666;
+  --border: #ddd;
+  --code-bg: #f5f5f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a;
+    --text: #eee;
+    --accent: #0fa;
+    --muted: #888;
+    --border: #333;
+    --code-bg: #111;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+/* Typography - like IANA */
+h1 { font-size: 28px; font-weight: 600; margin-bottom: 10px; }
+h2 { font-size: 20px; font-weight: 600; margin: 40px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+h3 { font-size: 16px; font-weight: 600; margin: 25px 0 10px; }
+p { margin-bottom: 15px; }
+a { color: var(--accent); }
+a:hover { text-decoration: none; }
+
+/* Header - minimal like example.com */
+header {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border);
+}
+
+header p {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Navigation */
+nav {
+  margin: 20px 0;
+}
+
+nav a {
+  margin-right: 20px;
+  font-size: 14px;
+}
+
+/* Code blocks - like RFCs */
+pre, code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 14px;
+  background: var(--code-bg);
+}
+
+pre {
+  padding: 15px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  margin: 15px 0;
+}
+
+code {
+  padding: 2px 6px;
+}
+
+/* Tables - like IANA registry */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-weight: 600;
+  background: var(--code-bg);
+}
+
+/* Boxes */
+.box {
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.box.important {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+/* Footer - like EFF */
+footer {
+  margin-top: 60px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+footer a {
+  color: var(--muted);
+}
+
+/* Accessibility */
+:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Print styles */
+@media print {
+  body { max-width: 100%; }
+  nav, .no-print { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Death2Data</h1>
+  <p>Private Search Infrastructure</p>
+  <nav>
+    <a href="#about">About</a>
+    <a href="#how">How It Works</a>
+    <a href="#specs">Technical Specs</a>
+    <a href="#privacy">Privacy Policy</a>
+    <a href="#access">Get Access</a>
+    <a href="#source">Source Code</a>
+  </nav>
+</header>
+
+<main>
+
+<section id="about">
+  <h2>About</h2>
+  <p>Death2Data provides private search infrastructure. Like <a href="https://signal.org">Signal</a> for messaging, we separate identity from content.</p>
+  
+  <div class="box important">
+    <strong>The Principle:</strong> We know who you are. We don't know what you search.
+  </div>
+  
+  <p>This service is built to internet infrastructure standards. No tracking scripts. No analytics. No third-party requests. View source to verify.</p>
+</section>
+
+<section id="how">
+  <h2>How It Works</h2>
+  
+  <h3>Architecture</h3>
+  <pre>
+┌─────────┐      ┌──────────┐      ┌─────────────┐
+│   You   │─────▶│ Death2Data│─────▶│ Search      │
+│         │      │ (SearXNG) │      │ Engines     │
+└─────────┘      └──────────┘      └─────────────┘
+                      │
+                      ▼
+               ┌──────────────┐
+               │ Token Hashes │
+               │ Login Records│
+               │ (NO QUERIES) │
+               └──────────────┘
+  </pre>
+  
+  <h3>Data Flow</h3>
+  <table>
+    <tr>
+      <th>Data Type</th>
+      <th>Collected</th>
+      <th>Stored</th>
+      <th>Location</th>
+    </tr>
+    <tr>
+      <td>Search queries</td>
+      <td>No</td>
+      <td>No</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>Search results</td>
+      <td>No</td>
+      <td>No</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>Access token (plaintext)</td>
+      <td>No</td>
+      <td>No</td>
+      <td>User's possession only</td>
+    </tr>
+    <tr>
+      <td>Token hash (SHA-256)</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>tokens.db</td>
+    </tr>
+    <tr>
+      <td>Login timestamp</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>logins.db</td>
+    </tr>
+    <tr>
+      <td>Login IP address</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>logins.db</td>
+    </tr>
+    <tr>
+      <td>Login user agent</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>logins.db</td>
+    </tr>
+  </table>
+  
+  <h3>Why We Log Logins</h3>
+  <p>Like Signal's phone number requirement, login records provide:</p>
+  <ul style="margin-left: 20px; margin-bottom: 15px;">
+    <li>Abuse prevention (rate limiting by token)</li>
+    <li>Legal compliance (can identify account, not activity)</li>
+    <li>Security (detect unauthorized token use)</li>
+  </ul>
+  <p>We cannot associate any search query with any user. By design.</p>
+</section>
+
+<section id="specs">
+  <h2>Technical Specifications</h2>
+  
+  <h3>Search Engine</h3>
+  <table>
+    <tr><th>Component</th><th>Implementation</th></tr>
+    <tr><td>Software</td><td><a href="https://github.com/searxng/searxng">SearXNG</a> (AGPL-3.0)</td></tr>
+    <tr><td>Upstream engines</td><td>70+ (Google, Bing, DuckDuckGo, Wikipedia, etc.)</td></tr>
+    <tr><td>Query logging</td><td>Disabled</td></tr>
+    <tr><td>Result tracking</td><td>Disabled</td></tr>
+  </table>
+  
+  <h3>Authentication</h3>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Token format</td><td><code>d2d_[24 random bytes, base64url]</code></td></tr>
+    <tr><td>Token entropy</td><td>192 bits</td></tr>
+    <tr><td>Hash algorithm</td><td>SHA-256</td></tr>
+    <tr><td>Storage</td><td>Hash only (token cannot be recovered)</td></tr>
+  </table>
+  
+  <h3>Security Headers</h3>
+  <pre>
+Content-Security-Policy: default-src 'self'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Referrer-Policy: no-referrer
+Permissions-Policy: interest-cohort=()
+  </pre>
+  
+  <h3>Infrastructure</h3>
+  <table>
+    <tr><th>Layer</th><th>Technology</th></tr>
+    <tr><td>Application</td><td>Python 3.11+ (stdlib only)</td></tr>
+    <tr><td>Database</td><td>SQLite 3</td></tr>
+    <tr><td>Container</td><td>Docker / Podman</td></tr>
+    <tr><td>TLS</td><td>Let's Encrypt (ECDSA P-384)</td></tr>
+    <tr><td>DNS</td><td>Cloudflare (proxied)</td></tr>
+  </table>
+</section>
+
+<section id="privacy">
+  <h2>Privacy Policy</h2>
+  <p><em>Last updated: 2025-01-24</em></p>
+  
+  <h3>What We Collect</h3>
+  <p>When you <strong>create an account</strong>: Nothing. We don't have accounts.</p>
+  <p>When you <strong>purchase access</strong>: Stripe collects payment information. We receive: confirmation of payment, nothing else. We generate a token and give it to you. We store only the SHA-256 hash of this token.</p>
+  <p>When you <strong>log in</strong>: We record the token hash, your IP address, your browser's user agent string, and the timestamp.</p>
+  <p>When you <strong>search</strong>: Nothing. We do not log, store, or process search queries. We cannot.</p>
+  
+  <h3>What We Don't Collect</h3>
+  <ul style="margin-left: 20px; margin-bottom: 15px;">
+    <li>Search queries</li>
+    <li>Search results</li>
+    <li>Browsing history</li>
+    <li>Cookies (we don't use them)</li>
+    <li>Email addresses (Stripe has yours, we don't)</li>
+    <li>Names</li>
+    <li>Any form of user profile</li>
+  </ul>
+  
+  <h3>Third Parties</h3>
+  <p><strong>Stripe</strong>: Processes payments. Their <a href="https://stripe.com/privacy">privacy policy</a> applies to payment data.</p>
+  <p><strong>Search engines</strong>: SearXNG queries Google, Bing, etc. on your behalf. They see our server's IP, not yours. They cannot associate queries with you.</p>
+  <p><strong>No one else</strong>: We don't use analytics, advertising, social media integrations, or any other third-party services.</p>
+  
+  <h3>Data Retention</h3>
+  <table>
+    <tr><th>Data</th><th>Retention</th></tr>
+    <tr><td>Token hashes</td><td>Until access expires or you request deletion</td></tr>
+    <tr><td>Login records</td><td>90 days</td></tr>
+    <tr><td>Search queries</td><td>Not applicable (not collected)</td></tr>
+  </table>
+  
+  <h3>Your Rights</h3>
+  <p>Request your data: We can provide your token hash and associated login records. We cannot provide search history because it doesn't exist.</p>
+  <p>Delete your data: Email <a href="mailto:privacy@death2data.com">privacy@death2data.com</a> with your token. We'll delete the hash and all login records.</p>
+  
+  <h3>Law Enforcement</h3>
+  <p>If we receive a valid legal request, we can provide:</p>
+  <ul style="margin-left: 20px; margin-bottom: 15px;">
+    <li>Token hash (not the token itself)</li>
+    <li>Login timestamps, IPs, and user agents</li>
+  </ul>
+  <p>We cannot provide search queries because we don't have them. We will publish a <a href="#transparency">transparency report</a> annually.</p>
+</section>
+
+<section id="access">
+  <h2>Get Access</h2>
+  
+  <div class="box">
+    <h3>Pricing</h3>
+    <p><strong>$1 per 28 days</strong></p>
+    <p>No free tier. No ads. No data mining. You pay with money, not data.</p>
+    <p><a href="https://buy.stripe.com/XXXXX">Purchase Access →</a></p>
+  </div>
+  
+  <h3>How It Works</h3>
+  <ol style="margin-left: 20px; margin-bottom: 15px;">
+    <li>Click the purchase link above</li>
+    <li>Pay $1 via Stripe</li>
+    <li>Receive your access token (shown once, save it)</li>
+    <li>Use the token to access search</li>
+  </ol>
+  
+  <h3>Token Security</h3>
+  <p>Your token is like a password. We cannot recover it if lost. Store it securely.</p>
+  <p>If your token is compromised, contact us for a replacement.</p>
+</section>
+
+<section id="source">
+  <h2>Source Code</h2>
+  <p>This project is open source. Verify our claims yourself.</p>
+  
+  <table>
+    <tr><th>Repository</th><th>License</th></tr>
+    <tr><td><a href="https://github.com/death2data/search">death2data/search</a></td><td>AGPL-3.0</td></tr>
+    <tr><td><a href="https://github.com/searxng/searxng">searxng/searxng</a></td><td>AGPL-3.0</td></tr>
+  </table>
+  
+  <h3>Verification</h3>
+  <p>Run your own instance:</p>
+  <pre>
+git clone https://github.com/death2data/search
+cd search
+docker-compose up -d
+# Open http://localhost:3000
+  </pre>
+  
+  <p>Check that queries aren't logged:</p>
+  <pre>
+# Do some searches, then:
+docker logs searxng 2>&1 | grep -i "your query"
+# Should return nothing
+  </pre>
+</section>
+
+<section id="transparency">
+  <h2>Transparency Report</h2>
+  <p><em>Report period: 2025</em></p>
+  
+  <table>
+    <tr><th>Request Type</th><th>Received</th><th>Complied</th><th>Data Provided</th></tr>
+    <tr><td>Subpoenas</td><td>0</td><td>0</td><td>—</td></tr>
+    <tr><td>Court orders</td><td>0</td><td>0</td><td>—</td></tr>
+    <tr><td>Government requests</td><td>0</td><td>0</td><td>—</td></tr>
+    <tr><td>National security letters</td><td>0</td><td>0</td><td>—</td></tr>
+  </table>
+  
+  <p>We have never provided search queries to anyone because we don't have them.</p>
+  
+  <h3>Warrant Canary</h3>
+  <p>As of 2025-01-24, we have not received any secret court orders or national security letters.</p>
+</section>
+
+<section id="contact">
+  <h2>Contact</h2>
+  <table>
+    <tr><td>General</td><td><a href="mailto:hello@death2data.com">hello@death2data.com</a></td></tr>
+    <tr><td>Privacy</td><td><a href="mailto:privacy@death2data.com">privacy@death2data.com</a></td></tr>
+    <tr><td>Security</td><td><a href="mailto:security@death2data.com">security@death2data.com</a></td></tr>
+    <tr><td>Legal</td><td><a href="mailto:legal@death2data.com">legal@death2data.com</a></td></tr>
+  </table>
+  
+  <h3>PGP Key</h3>
+  <pre>
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+[Key will be published here]
+-----END PGP PUBLIC KEY BLOCK-----
+  </pre>
+</section>
+
+</main>
+
+<footer>
+  <p>
+    <a href="#about">About</a> · 
+    <a href="#privacy">Privacy</a> · 
+    <a href="#source">Source</a> · 
+    <a href="#transparency">Transparency</a>
+  </p>
+  <p>Death2Data is not affiliated with IANA, ICANN, EFF, or any other organization.</p>
+  <p>No cookies. No tracking. No JavaScript required. <a href="view-source:">View source</a> to verify.</p>
+  <p>© 2025 Death2Data. Content available under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,327 @@
+
+                              Death2Data
+                     Private Search Infrastructure
+
+                           Specification v1.0
+                            January 2025
+
+Status of This Document
+
+   This document specifies the Death2Data private search protocol and
+   infrastructure for the Internet community. Distribution of this
+   document is unlimited.
+
+Abstract
+
+   This document describes the architecture, protocols, and data
+   handling practices for Death2Data, a privacy-preserving search
+   service. The core principle is the separation of identity from
+   activity: the service authenticates users but does not record
+   their search queries.
+
+Table of Contents
+
+   1. Introduction
+   2. Terminology
+   3. Architecture Overview
+   4. Token Specification
+   5. Data Collection
+   6. Search Protocol
+   7. Security Considerations
+   8. Privacy Considerations
+   9. IANA Considerations
+   10. References
+
+1. Introduction
+
+   Traditional search engines collect and store user queries,
+   creating detailed profiles of user interests and behavior. This
+   data is used for advertising, sold to third parties, and
+   subject to government surveillance.
+
+   Death2Data provides an alternative model inspired by Signal's
+   approach to messaging: authenticate the user, but don't record
+   their activity.
+
+   The key insight is that authentication and logging are separable.
+   A service can verify that a user has paid for access without
+   recording what they do with that access.
+
+2. Terminology
+
+   Token: A cryptographically random string that grants access to
+          the service. Format: d2d_[24 bytes, base64url encoded]
+
+   Token Hash: The SHA-256 hash of a token. The only form in which
+               tokens are stored server-side.
+
+   Login Record: A record of authentication containing: token hash,
+                 IP address, user agent, timestamp.
+
+   Query: A search request from a user. NEVER logged or stored.
+
+   SearXNG: The open-source metasearch engine used as the backend.
+
+3. Architecture Overview
+
+   3.1. Components
+
+      ┌─────────────────────────────────────────────────────────┐
+      │                      Client                             │
+      │  (Browser or API client with valid token)               │
+      └─────────────────────┬───────────────────────────────────┘
+                            │
+                            │ HTTPS (TLS 1.3)
+                            │
+      ┌─────────────────────▼───────────────────────────────────┐
+      │                  Gateway Service                        │
+      │                                                         │
+      │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+      │  │   Token     │  │   Login     │  │    Rate         │ │
+      │  │   Verify    │  │   Logger    │  │    Limiter      │ │
+      │  └──────┬──────┘  └──────┬──────┘  └────────┬────────┘ │
+      │         │                │                   │          │
+      │         ▼                ▼                   │          │
+      │  ┌─────────────┐  ┌─────────────┐           │          │
+      │  │ tokens.db   │  │ logins.db   │           │          │
+      │  │ (hashes)    │  │ (records)   │           │          │
+      │  └─────────────┘  └─────────────┘           │          │
+      │                                             │          │
+      └─────────────────────────────────────────────┼──────────┘
+                            │                       │
+                            │ (no query data)       │
+                            │                       │
+      ┌─────────────────────▼───────────────────────▼──────────┐
+      │                    SearXNG                              │
+      │                                                         │
+      │  - Query logging: DISABLED                              │
+      │  - Result tracking: DISABLED                            │
+      │  - Upstream: 70+ search engines                         │
+      │                                                         │
+      └─────────────────────┬───────────────────────────────────┘
+                            │
+                            │ (queries appear to come from
+                            │  SearXNG server, not user)
+                            │
+      ┌─────────────────────▼───────────────────────────────────┐
+      │           External Search Engines                       │
+      │  (Google, Bing, DuckDuckGo, Wikipedia, etc.)            │
+      └─────────────────────────────────────────────────────────┘
+
+   3.2. Data Flow
+
+      1. Client submits token + query
+      2. Gateway verifies token hash exists in tokens.db
+      3. Gateway logs authentication (NOT query) to logins.db
+      4. Gateway forwards query to SearXNG
+      5. SearXNG queries external engines
+      6. Results return to client
+      7. Query is discarded (never stored)
+
+4. Token Specification
+
+   4.1. Format
+
+      token = "d2d_" || base64url(random_bytes(24))
+
+      Example: d2d_Abc123XyzDefGhiJklMnoPqrStuVwx
+
+   4.2. Generation
+
+      import secrets
+      import base64
+
+      def generate_token():
+          random_bytes = secrets.token_bytes(24)
+          encoded = base64.urlsafe_b64encode(random_bytes).decode()
+          return f"d2d_{encoded}"
+
+   4.3. Properties
+
+      - Entropy: 192 bits (24 bytes)
+      - Character set: [A-Za-z0-9_-] (base64url)
+      - Length: 36 characters (4 prefix + 32 encoded)
+      - Collision probability: negligible (2^-96 for birthday attack)
+
+   4.4. Storage
+
+      Server stores only: SHA-256(token)
+
+      The plaintext token exists only:
+      - In the generation response (shown once)
+      - In the user's possession
+
+      The server CANNOT recover the token from the hash.
+
+5. Data Collection
+
+   5.1. Data We Collect
+
+      Table 1: Collected Data
+
+      +------------------+----------+----------+------------------+
+      | Data             | Collect  | Store    | Retention        |
+      +------------------+----------+----------+------------------+
+      | Token hash       | Yes      | Yes      | Until expiry     |
+      | Login timestamp  | Yes      | Yes      | 90 days          |
+      | Login IP         | Yes      | Yes      | 90 days          |
+      | Login user agent | Yes      | Yes      | 90 days          |
+      +------------------+----------+----------+------------------+
+
+   5.2. Data We Do Not Collect
+
+      Table 2: Data NOT Collected
+
+      +------------------+----------+----------+------------------+
+      | Data             | Collect  | Store    | Notes            |
+      +------------------+----------+----------+------------------+
+      | Search queries   | No       | No       | By design        |
+      | Search results   | No       | No       | By design        |
+      | Token plaintext  | No       | No       | Hash only        |
+      | Email address    | No       | No       | Stripe only      |
+      | Payment details  | No       | No       | Stripe only      |
+      | Cookies          | No       | No       | Not used         |
+      | Browser history  | No       | No       | Not accessible   |
+      +------------------+----------+----------+------------------+
+
+   5.3. Database Schema
+
+      -- tokens.db
+      CREATE TABLE tokens (
+          hash TEXT PRIMARY KEY,     -- SHA-256 of token
+          created_at TEXT NOT NULL,  -- ISO 8601 timestamp
+          expires_at TEXT NOT NULL   -- ISO 8601 timestamp
+      );
+
+      -- logins.db
+      CREATE TABLE logins (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          token_hash TEXT NOT NULL,  -- SHA-256 of token
+          ip_address TEXT NOT NULL,  -- Client IP
+          user_agent TEXT,           -- HTTP User-Agent (truncated)
+          timestamp TEXT NOT NULL    -- ISO 8601 timestamp
+      );
+
+      -- NO QUERIES TABLE EXISTS
+
+6. Search Protocol
+
+   6.1. Authentication
+
+      GET /search?token=d2d_xxx&q=example
+      
+      OR
+      
+      GET /search?q=example
+      Authorization: Bearer d2d_xxx
+
+   6.2. Token Verification
+
+      def verify_token(token):
+          if not token or not token.startswith("d2d_"):
+              return False
+          token_hash = sha256(token.encode()).hexdigest()
+          return database.exists("SELECT 1 FROM tokens WHERE hash = ?", token_hash)
+
+   6.3. Response
+
+      On success: Search results (JSON or HTML)
+      On failure: 401 Unauthorized
+
+   6.4. What Gets Logged
+
+      # This is logged:
+      log_login(token_hash, client_ip, user_agent, timestamp)
+
+      # This is NOT logged:
+      # query  <-- NEVER STORED
+
+7. Security Considerations
+
+   7.1. Token Security
+
+      - Tokens should be treated as passwords
+      - Transmit only over HTTPS
+      - Store securely on client side
+      - Rotate if compromised
+
+   7.2. Hash Security
+
+      SHA-256 is used for token hashing. Given a hash, an attacker
+      cannot recover the original token in reasonable time.
+
+   7.3. Transport Security
+
+      - TLS 1.3 required
+      - HSTS enabled (max-age=31536000)
+      - Certificate transparency logged
+
+   7.4. Server Security
+
+      - No query data to steal
+      - Login records have limited value
+      - Token hashes cannot be reversed
+
+8. Privacy Considerations
+
+   8.1. Threat Model
+
+      We protect against:
+      - Service operator viewing queries (we can't)
+      - Database breach revealing queries (they don't exist)
+      - Legal requests for query history (we don't have it)
+
+      We do NOT protect against:
+      - Network observers (use Tor for that)
+      - Compromised client devices
+      - Upstream search engine logging (they see queries from our IP)
+
+   8.2. What Law Enforcement Can Obtain
+
+      With valid legal process, we can provide:
+      - Token hash (cannot be reversed to token)
+      - Login records (IP, user agent, timestamp)
+
+      We CANNOT provide:
+      - Search queries (not collected)
+      - Search results (not stored)
+      - User email (we don't have it)
+
+   8.3. Comparison to Other Services
+
+      +---------------+--------+--------+--------+---------+
+      | Service       | Queries| Profile| Ads    | 3rd Pty |
+      +---------------+--------+--------+--------+---------+
+      | Google        | Yes    | Yes    | Yes    | Yes     |
+      | Bing          | Yes    | Yes    | Yes    | Yes     |
+      | DuckDuckGo    | No*    | No     | Yes    | Limited |
+      | Death2Data    | No     | No     | No     | No      |
+      +---------------+--------+--------+--------+---------+
+
+      * DuckDuckGo's privacy is based on policy, not architecture.
+        Death2Data's privacy is architectural: we cannot log queries.
+
+9. IANA Considerations
+
+   This document has no IANA considerations.
+
+10. References
+
+   [SEARXNG]   SearXNG Project, "SearXNG Documentation",
+               https://docs.searxng.org/
+
+   [SIGNAL]    Signal Foundation, "Signal Technical Documentation",
+               https://signal.org/docs/
+
+   [RFC6234]   Eastlake, D. and T. Hansen, "US Secure Hash
+               Algorithms", RFC 6234, May 2011.
+
+   [RFC8446]   Rescorla, E., "The Transport Layer Security (TLS)
+               Protocol Version 1.3", RFC 8446, August 2018.
+
+Authors' Address
+
+   Death2Data Project
+   https://death2data.com
+   Email: specs@death2data.com
+
