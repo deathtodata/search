@@ -1,0 +1,16 @@
+{
+  "name": "Death2Data Search",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "gateway",
+  "workspaceFolder": "/app",
+  "postCreateCommand": "python3 gateway.py --generate-token",
+  "forwardPorts": [3000, 8888],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  }
+}

@@ -34,6 +34,21 @@ This isn't a privacy policy promise. It's architectural - **there's no code to l
 
 ---
 
+## Try It Now
+
+### One-Click Deploy
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/death2data-search)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/deathtodata/search)
+
+**Or use GitHub Codespaces:**
+1. Click "Code" → "Open with Codespaces"
+2. Wait 60 seconds for environment to build
+3. Token will be auto-generated in terminal
+4. Access at forwarded port 3000
+
+---
+
 ## Quick Start
 
 ### Run Locally (5 minutes)
@@ -54,6 +69,15 @@ open "http://localhost:3000/?token=d2d_abc123..."
 ```
 
 That's it. You're searching privately.
+
+### Deploy to Your Own VPS (1 command)
+
+```bash
+# On fresh Ubuntu 22.04 VPS:
+curl -sSL https://raw.githubusercontent.com/deathtodata/search/main/demo-deploy.sh | sudo bash
+```
+
+This installs Docker, clones the repo, starts services, and gives you a public URL with token.
 
 ---
 

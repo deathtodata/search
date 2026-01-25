@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: death2data-search
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: docker-compose up
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: SEARXNG_URL
+        value: http://searxng:8080
+      - key: DATABASE_PATH
+        value: /app/data/d2d.db
